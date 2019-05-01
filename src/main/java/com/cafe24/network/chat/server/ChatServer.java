@@ -1,7 +1,7 @@
 package com.cafe24.network.chat.server;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,7 +15,7 @@ public class ChatServer {
 	
 	public static void main(String[] args) {
 		ServerSocket serverSocket = null;
-		List<PrintWriter> writers = new ArrayList<PrintWriter>();
+		List<Writer> writers = new ArrayList<Writer>();
 		try {
 			//1. 서버소켓 생성
 			serverSocket = new ServerSocket();

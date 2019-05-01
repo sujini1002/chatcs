@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -14,8 +15,10 @@ import java.util.List;
 public class ChatServerThread extends Thread {
 	
 	private String nickname;
-	private List<PrintWriter> writers;
+	private List<Writer> writers;
 	private Socket socket;
+	private BufferedReader br;
+	private PrintWriter pr;
 	
 	public ChatServerThread(Socket socket,List writers) {
 		this.socket = socket;
@@ -33,8 +36,8 @@ public class ChatServerThread extends Thread {
 		
 		try {
 				//2. 스트림 얻기
-				BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(),"utf-8"));
-				PrintWriter pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8"),true);
+				br = new BufferedReader(new InputStreamReader(socket.getInputStream(),"utf-8"));
+				pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8"),true);
 			
 				//3. 요청 처리
 				while(true) {
@@ -65,8 +68,7 @@ public class ChatServerThread extends Thread {
 					}//end while
 			}catch(SocketException e) {
 				//갑자기 끊어진 오류
-				
-				e.printStackTrace();
+				//doQuit(pr);
 				System.out.println("[server] sudden closed by client");
 			}catch(IOException e) {
 				e.printStackTrace();
@@ -124,7 +126,8 @@ public class ChatServerThread extends Thread {
 	}
 	private void broadcast(String data) {
 		synchronized (writers) {
-			for(PrintWriter pr : writers) {
+			for(Writer writer : writers) {
+				PrintWriter pr = (PrintWriter)writer;
 				pr.println(data);
 				pr.flush();
 			}
