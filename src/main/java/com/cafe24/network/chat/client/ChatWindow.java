@@ -28,6 +28,8 @@ public class ChatWindow {
 	private TextField textField;
 	private TextArea textArea;
 	private Socket socket;
+	private innerclass thread;
+	//private BufferedReader br;
 
 	public ChatWindow(String name,Socket socket) {
 		frame = new Frame(name);
@@ -37,20 +39,29 @@ public class ChatWindow {
 		textField = new TextField();
 		textArea = new TextArea(30, 80);
 		
-		new innerclass(socket).start();
+		this.thread = new innerclass(socket);
+		thread.start();
 	}
 	private void finish() {
-		try {
-			//소켓정리는 여기서
-			PrintWriter pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8"),true);
-			String send = "QUIT";
-			pr.println(send);
-			System.exit(0);
-		} catch (IOException e) {
-		}
-		
-		
+			try {
+				PrintWriter pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8"),true);
+				pr.println("QUIT");
+				thread.join();
+				if(socket==null&&!socket.isClosed()) {
+					socket.close();
+				}
+				System.exit(0);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
 	}
+		
+		
+	
 	public void show() {
 		// Button
 		buttonSend.setBackground(Color.GRAY);
@@ -118,7 +129,7 @@ public class ChatWindow {
 		}
 	}
 
-	private class innerclass extends Thread {
+	private  class innerclass extends Thread {
 
 		private Socket socket;
 		public innerclass(Socket socket) {
@@ -141,7 +152,7 @@ public class ChatWindow {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				System.out.println("[client] 퇴장하였습니다.");
 				e.printStackTrace();
 			}
 		}

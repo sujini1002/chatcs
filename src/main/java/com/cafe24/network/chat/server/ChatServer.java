@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ChatServer {
 	
-	private static final int PORT = 5180;
+	public static final int PORT = 5180;
 	
 	
 	public static void main(String[] args) {

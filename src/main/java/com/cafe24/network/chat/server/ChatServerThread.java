@@ -42,9 +42,10 @@ public class ChatServerThread extends Thread {
 				//3. 요청 처리
 				while(true) {
 						String request = br.readLine();
-						//System.out.println("-----"+request+"----------");
+						System.out.println("-----"+request+"----------");
 						if(request == null) {
 							ChatServer.log("클라이언트로 부터 연결이 끊어짐");
+							doQuit(pr);
 							break;
 						}
 						//4. 프로토콜 분석
@@ -68,8 +69,9 @@ public class ChatServerThread extends Thread {
 					}//end while
 			}catch(SocketException e) {
 				//갑자기 끊어진 오류
-				//doQuit(pr);
 				System.out.println("[server] sudden closed by client");
+				//doQuit(pr);
+				//e.printStackTrace();
 			}catch(IOException e) {
 				e.printStackTrace();
 			}finally {
@@ -83,14 +85,22 @@ public class ChatServerThread extends Thread {
 	}
 
 	private void doQuit(PrintWriter pr) {
-		removeWriter(pr);
+		
+		try {
+			System.out.println("doQuit에 들어옴");
+			removeWriter(pr);
+			String data = this.nickname + "님이 퇴장하였습니다.";
+			broadcast(data);
+			socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		//ack
-		pr.println("delete ok");
-		pr.flush();
+//		pr.println("delete ok");
+//		pr.flush();
 		
-		String data = this.nickname + "님이 퇴장하였습니다.";
-		broadcast(data);
 	}
 
 	private void removeWriter(PrintWriter pr) {

@@ -8,10 +8,12 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Scanner;
 
+import com.cafe24.network.chat.server.ChatServer;
+import com.cafe24.network.chat.server.ChatServerThread;
+
 public class ChatClientApp {
 	
-	private static final String SERVER_IP = "192.168.1.26";
-	private static final int SERVER_PORT = 5180;
+	private static final String SERVER_IP = "127.0.0.1";
 
 	public static void main(String[] args) {
 		String name = null;
@@ -34,7 +36,7 @@ public class ChatClientApp {
 		try {
 			//1. 소캣 만들고
 			socket = new Socket();
-			socket.connect(new InetSocketAddress(SERVER_IP, SERVER_PORT));
+			socket.connect(new InetSocketAddress(SERVER_IP, ChatServer.PORT));
 			//2. iostream 작업
 			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(),"utf-8"));
 			PrintWriter pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8"),true);
