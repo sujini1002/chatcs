@@ -9,18 +9,20 @@ import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 
 public class ChatServerThread extends Thread {
 	
 	private String nickname;
-	private List<Writer> writers;
+	private Map<String,Writer> writers;
 	private Socket socket;
 	private BufferedReader br;
 	private PrintWriter pr;
 	
-	public ChatServerThread(Socket socket,List writers) {
+	public ChatServerThread(Socket socket,Map writers) {
 		this.socket = socket;
 		this.writers = writers;
 	}
@@ -42,7 +44,7 @@ public class ChatServerThread extends Thread {
 				//3. 요청 처리
 				while(true) {
 						String request = br.readLine();
-						System.out.println("-----"+request+"----------");
+						System.out.println("[serve] client Send ["+request+"]");
 						if(request == null) {
 							ChatServer.log("클라이언트로 부터 연결이 끊어짐");
 							doQuit(pr);
@@ -60,8 +62,8 @@ public class ChatServerThread extends Thread {
 							doJoin(tokens[1],pr);
 						}else if("MESSAGE".equals(tokens[0])) {
 							doMessage(tokens[1]);
-						}else if("QUIT".equals(tokens[0])) {
-							doQuit(pr);
+						}else if("WHISPER".equals(tokens[0])){
+							whisper(tokens[1],tokens[2]);
 						}else {
 							ChatServer.log("ERROR : 알 수 없는 요청 ["+tokens[0]+"]");
 						}
@@ -70,7 +72,7 @@ public class ChatServerThread extends Thread {
 			}catch(SocketException e) {
 				//갑자기 끊어진 오류
 				System.out.println("[server] sudden closed by client");
-				//doQuit(pr);
+				doQuit(pr);
 				//e.printStackTrace();
 			}catch(IOException e) {
 				e.printStackTrace();
@@ -84,10 +86,28 @@ public class ChatServerThread extends Thread {
 			}
 	}
 
+	private void whisper(String receiver, String message) {
+		//귓속말 전송하기
+		//receiver = receiver.replaceAll("\\[", "");
+		//receiver = receiver.replaceAll("\\]", "");
+		String data = "["+this.nickname + "]께서 ["+ receiver +"]님에게 ["+ message +"]라고 귓속말을 걸었습니다!";
+		sendWhisper(receiver,data);
+	}
+
+	private void sendWhisper(String receiver, String data) {
+		//귓소말 상대에게 보내기
+		synchronized (writers) {
+			Writer tmpWriter = writers.get(receiver);
+			PrintWriter pr = (PrintWriter)tmpWriter;
+			pr.println(data);
+			pr.flush();
+		}
+	}
+
 	private void doQuit(PrintWriter pr) {
 		
 		try {
-			System.out.println("doQuit에 들어옴");
+			//System.out.println("doQuit에 들어옴");
 			removeWriter(pr);
 			String data = this.nickname + "님이 퇴장하였습니다.";
 			broadcast(data);
@@ -105,10 +125,20 @@ public class ChatServerThread extends Thread {
 
 	private void removeWriter(PrintWriter pr) {
 		synchronized (writers) {
-			writers.remove(pr);
+			getKey(writers,pr);
 		}
 		
 	}
+	private void getKey(Map<String, Writer> writers, PrintWriter pr) {
+		Iterator<String> iterWrtiers = new HashSet<String>(writers.keySet()).iterator();
+		while(iterWrtiers.hasNext()) {
+			String key = iterWrtiers.next();
+			if(writers.get(key).equals(pr)) {
+				writers.remove(key);
+			}
+		}
+	}
+
 	//메세지 받기
 	private void doMessage(String message) {
 		String data = this.nickname + ": "+ message;
@@ -129,17 +159,17 @@ public class ChatServerThread extends Thread {
 		
 	}
 
-	private void addWriter(PrintWriter pr) {
+	private void addWriter(PrintWriter writer) {
 		synchronized (writers) {
-			writers.add(pr);
+			writers.put(nickname,writer);
 		}
 	}
 	private void broadcast(String data) {
 		synchronized (writers) {
-			for(Writer writer : writers) {
-				PrintWriter pr = (PrintWriter)writer;
-				pr.println(data);
-				pr.flush();
+			for(Map.Entry<String,Writer> writer : writers.entrySet()){
+				 PrintWriter pr = (PrintWriter)writer.getValue();
+				 pr.println(data);
+				 pr.flush();
 			}
 		}
 	}

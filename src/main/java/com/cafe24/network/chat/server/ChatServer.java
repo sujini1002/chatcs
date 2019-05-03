@@ -5,8 +5,8 @@ import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ChatServer {
 	
@@ -15,7 +15,7 @@ public class ChatServer {
 	
 	public static void main(String[] args) {
 		ServerSocket serverSocket = null;
-		List<Writer> writers = new ArrayList<Writer>();
+		Map<String,Writer> writers = new HashMap<String,Writer>();
 		try {
 			//1. 서버소켓 생성
 			serverSocket = new ServerSocket();

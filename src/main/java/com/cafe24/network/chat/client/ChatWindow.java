@@ -19,6 +19,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class ChatWindow {
 
@@ -43,21 +44,30 @@ public class ChatWindow {
 		thread.start();
 	}
 	private void finish() {
+//			try {
+//				PrintWriter pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8"),true);
+//				pr.println("QUIT");
+//				thread.join();
+//				if(socket==null&&!socket.isClosed()) {
+//					socket.close();
+//				}
+//				System.exit(0);
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} 
 			try {
-				PrintWriter pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8"),true);
-				pr.println("QUIT");
-				thread.join();
-				if(socket==null&&!socket.isClosed()) {
+				if(socket!=null && socket.isClosed() == false) {
 					socket.close();
+					System.exit(0);
 				}
-				System.exit(0);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
+			}
 	}
 		
 		
@@ -115,20 +125,46 @@ public class ChatWindow {
 	}
 	private void sendMessage() {
 		String message = textField.getText();
-		try {
-			PrintWriter pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8"),true);
-			String data = "MESSAGE:"+message;
-			//보낸 후 비우기
-			//textField로 포커스 맞추기
-			pr.println(data);
-			textField.setText("");
-			textField.requestFocus();
+		
+		//귓소말 구별
+		if(message.length()>5 && "[귓속말]".equals(message.substring(0, 5))) {
+			message = message.substring(6,message.length());
+			whisper(message);
+		}else {
+			System.out.println("[client]가 보낸 메세지"+message);
+			ToServer("MESSAGE:"+message);
+		}
 			
+		//창비우기
+		textField.setText("");
+		textField.requestFocus();	
+		
+	}
+	private void whisper(String message) {
+		String[] whisperMessage = message.split(":");
+		if(whisperMessage.length<2) {
+			updateTextArea("===========================");
+			updateTextArea("귓속말 전하는 형식이 잘 못 되었습니다 .");
+			updateTextArea("[귓속말]:[수신자]:메세지 ");
+			updateTextArea("다시 시도해 주세요.");
+			updateTextArea("===========================");
+		}else {
+			
+			updateTextArea("귓속말로 "+whisperMessage[0]+"에게 ["+whisperMessage[1]+"]라고 보내셨습니다.");
+			String receiver = whisperMessage[0].substring(1, whisperMessage[0].length()-1);
+			message = "WHISPER:"+receiver+":"+whisperMessage[1];
+			ToServer(message);
+		}
+	}
+	private void ToServer(String data) {
+		
+		try {
+			PrintWriter pr = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8),true);
+			pr.println(data);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-
 	private  class innerclass extends Thread {
 
 		private Socket socket;
@@ -139,7 +175,7 @@ public class ChatWindow {
 		@Override
 		public void run() {
 			try {
-				BufferedReader br =  new BufferedReader(new InputStreamReader(socket.getInputStream(), "utf-8"));
+				BufferedReader br =  new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 				while (true) {
 
 					String newMessage = br.readLine();
@@ -148,12 +184,8 @@ public class ChatWindow {
 					}
 					updateTextArea(newMessage);
 				}
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			} catch (IOException e) {
 				System.out.println("[client] 퇴장하였습니다.");
-				e.printStackTrace();
 			}
 		}
 	}
